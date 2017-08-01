@@ -15,6 +15,7 @@ params = {
     'learning_rate': 0.1,
     'learning_rate_decay': 0.1,
     'learning_rate_decay_step': 20,
+    'gradient_clipping': 0.4,
     'benchmark': '91'
 }
 
@@ -44,7 +45,10 @@ summary_step = tf.summary.merge_all()
 saver = tf.train.Saver(max_to_keep=0)
 
 optimizer = tf.train.MomentumOptimizer(learning_rate, params['momentum'])
-train_step = optimizer.minimize(loss, global_step=global_step)
+gradients = optimizer.compute_gradients(loss)
+clip_value = params['gradient_clipping'] / learning_rate
+capped_gradients = [(tf.clip_by_value(grad, -clip_value, clip_value), var) for grad, var in gradients]
+train_step = optimizer.apply_gradients(capped_gradients, global_step=global_step)
 
 checkpoint_path = os.path.join(os.path.dirname(__file__), 'model')
 model_path = os.path.join(checkpoint_path, 'model.ckpt')
