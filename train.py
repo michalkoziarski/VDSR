@@ -1,28 +1,17 @@
 import data
 import model
 import os
+import json
 import tensorflow as tf
 
 
-params = {
-    'n_layers': 20,
-    'kernel_size': 3,
-    'n_filters': 64,
-    'epochs': 80,
-    'weight_decay': 0.0001,
-    'momentum': 0.9,
-    'batch_size': 64,
-    'learning_rate': 0.1,
-    'learning_rate_decay': 0.1,
-    'learning_rate_decay_step': 20,
-    'gradient_clipping': 0.4,
-    'benchmark': '91'
-}
+with open(os.path.join(os.path.dirname(__file__), 'params.json')) as f:
+    params = json.load(f)
 
 data_set = data.load('train', params['benchmark'], params['batch_size'])
 
-input = tf.placeholder(tf.float32, shape=(params['batch_size'], 41, 41, 1))
-ground_truth = tf.placeholder(tf.float32, shape=(params['batch_size'], 41, 41, 1))
+input = tf.placeholder(tf.float32, shape=(params['batch_size'], params['patch_size'], params['patch_size'], 1))
+ground_truth = tf.placeholder(tf.float32, shape=(params['batch_size'], params['patch_size'], params['patch_size'], 1))
 learning_rate = tf.placeholder(tf.float32, shape=[])
 global_step = tf.Variable(0, trainable=False, name='global_step')
 network = model.Model(input, params['n_layers'], params['kernel_size'], params['n_filters'])
