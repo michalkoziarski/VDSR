@@ -32,4 +32,5 @@ class Model:
             self.output = tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(self.output, weight,
                                                                  strides=[1, 1, 1, 1], padding='SAME'), bias))
 
+        self.residual = self.output
         self.output = tf.add(self.output, self.input)

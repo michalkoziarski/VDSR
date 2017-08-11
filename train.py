@@ -25,6 +25,7 @@ tf.summary.scalar('learning rate', learning_rate)
 tf.summary.image('input', input)
 tf.summary.image('output', network.output)
 tf.summary.image('ground truth', ground_truth)
+tf.summary.image('residual', network.residual)
 
 for i in range(len(network.weights)):
     tf.summary.histogram('weights/layer #%d' % (i + 1), network.weights[i])
