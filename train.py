@@ -15,12 +15,13 @@ ground_truth = tf.placeholder(tf.float32, shape=(params['batch_size'], params['p
 learning_rate = tf.placeholder(tf.float32, shape=[])
 global_step = tf.Variable(0, trainable=False, name='global_step')
 network = model.Model(input, params['n_layers'], params['kernel_size'], params['n_filters'])
-loss = tf.reduce_mean(tf.square(tf.subtract(ground_truth, network.output)))
+base_loss = tf.reduce_mean(tf.square(tf.subtract(ground_truth, network.output)))
+weight_loss = params['weight_decay'] * tf.reduce_sum(tf.stack([tf.nn.l2_loss(weight) for weight in network.weights]))
+loss = base_loss + weight_loss
 
-for weight in network.weights:
-    loss += tf.nn.l2_loss(weight) * params['weight_decay']
-
-tf.summary.scalar('loss', loss)
+tf.summary.scalar('base loss', base_loss)
+tf.summary.scalar('weight loss', weight_loss)
+tf.summary.scalar('total loss', loss)
 tf.summary.scalar('learning rate', learning_rate)
 tf.summary.image('input', input)
 tf.summary.image('output', network.output)
