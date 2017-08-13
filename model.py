@@ -29,8 +29,10 @@ class Model:
 
             self.weights.append(weight)
             self.biases.append(bias)
-            self.output = tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(self.output, weight,
-                                                                 strides=[1, 1, 1, 1], padding='SAME'), bias))
+            self.output = tf.nn.bias_add(tf.nn.conv2d(self.output, weight, strides=[1, 1, 1, 1], padding='SAME'), bias)
+
+            if i < self.n_layers - 1:
+                self.output = tf.nn.relu(self.output)
 
         self.residual = self.output
         self.output = tf.add(self.output, self.input)
