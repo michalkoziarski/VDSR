@@ -2,7 +2,10 @@ import model
 import os
 import json
 import argparse
+import numpy as np
 import tensorflow as tf
+
+from scipy import misc
 
 
 def predict(images):
@@ -27,3 +30,14 @@ def predict(images):
             predictions.append(network.output.eval(feed_dict={input: image}))
 
     return predictions
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-input', help='a path of the input image', required=True)
+    parser.add_argument('-output', help='a path of the output image', required=True)
+    args = vars(parser.parse_args())
+
+    image = np.expand_dims((misc.imread(args['input']).astype(np.float) / 255), axis=2)
+    prediction = predict([np.array([image])])[0][0][:, :, 0]
+    misc.imsave(args['output'], prediction)
