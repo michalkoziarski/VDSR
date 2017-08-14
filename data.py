@@ -10,9 +10,10 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
 
 class TrainSet:
-    def __init__(self, benchmark, batch_size):
+    def __init__(self, benchmark, batch_size, scaling_factors=(2, 3, 4)):
         self.benchmark = benchmark
         self.batch_size = batch_size
+        self.scaling_factors = scaling_factors
         self.images_completed = 0
         self.epochs_completed = 0
         self.root_path = os.path.join(DATA_PATH, 'train', '%s_augmented' % self.benchmark)
@@ -24,7 +25,7 @@ class TrainSet:
             full_name, extension = file_name.split('.')
             original_name, count, scaling_factor = full_name.split('-')
 
-            if scaling_factor != '1':
+            if int(scaling_factor) in self.scaling_factors:
                 target_name = '%s-%s-1.%s' % (original_name, count, extension)
 
                 self.images.append(self.__read_image(file_name))
@@ -63,8 +64,9 @@ class TrainSet:
 
 
 class TestSet:
-    def __init__(self, benchmark):
+    def __init__(self, benchmark, scaling_factors=(2, 3, 4)):
         self.benchmark = benchmark
+        self.scaling_factors = scaling_factors
         self.images_completed = 0
         self.root_path = os.path.join(DATA_PATH, 'test', '%s_augmented' % self.benchmark)
         self.paths = os.listdir(self.root_path)
@@ -75,7 +77,7 @@ class TestSet:
             full_name, extension = file_name.split('.')
             original_name, count, scaling_factor = full_name.split('-')
 
-            if scaling_factor != '1':
+            if int(scaling_factor) in self.scaling_factors:
                 target_name = '%s-%s-1.%s' % (original_name, count, extension)
 
                 self.images.append(self.__read_image(file_name))
@@ -182,7 +184,7 @@ def augment(partition, benchmark, patch_size=41):
                 misc.imsave(os.path.join(augmented_path, out_name), scaled_images[scale])
 
 
-def load(partition, benchmark, batch_size=64, patch_size=41):
+def load(partition, benchmark, batch_size=64, patch_size=41, scaling_factors=(2, 3, 4)):
     assert partition in ['train', 'test']
 
     if partition == 'train':
@@ -210,9 +212,9 @@ def load(partition, benchmark, batch_size=64, patch_size=41):
     print('Loading data to the memory...')
 
     if partition == 'train':
-        data_set = TrainSet(benchmark, batch_size)
+        data_set = TrainSet(benchmark, batch_size, scaling_factors=scaling_factors)
     else:
-        data_set = TestSet(benchmark)
+        data_set = TestSet(benchmark, scaling_factors=scaling_factors)
 
     print('Loading complete.')
 
