@@ -1,28 +1,34 @@
 import data
 import model
+import utils
 import os
 import json
+import numpy as np
 import tensorflow as tf
 
 
 with open(os.path.join(os.path.dirname(__file__), 'params.json')) as f:
     params = json.load(f)
 
-data_set = data.load('train', params['benchmark'], params['batch_size'])
+train_set = data.load('train', params['train_set'], params['batch_size'])
+validation_set = data.load('test', params['validation_set'])
 
-input = tf.placeholder(tf.float32, shape=(params['batch_size'], params['patch_size'], params['patch_size'], 1))
-ground_truth = tf.placeholder(tf.float32, shape=(params['batch_size'], params['patch_size'], params['patch_size'], 1))
+input = tf.placeholder(tf.float32)
+ground_truth = tf.placeholder(tf.float32)
 learning_rate = tf.placeholder(tf.float32, shape=[])
 global_step = tf.Variable(0, trainable=False, name='global_step')
 network = model.Model(input, params['n_layers'], params['kernel_size'], params['n_filters'])
 base_loss = tf.reduce_mean(tf.square(tf.subtract(ground_truth, network.output)))
 weight_loss = params['weight_decay'] * tf.reduce_sum(tf.stack([tf.nn.l2_loss(weight) for weight in network.weights]))
 loss = base_loss + weight_loss
+score = tf.reduce_mean(utils.psnr(ground_truth, network.output))
+validation_score = tf.placeholder(tf.float32)
 
 tf.summary.scalar('base loss', base_loss)
 tf.summary.scalar('weight loss', weight_loss)
 tf.summary.scalar('total loss', loss)
 tf.summary.scalar('learning rate', learning_rate)
+tf.summary.scalar('validation score', validation_score)
 tf.summary.image('input', input)
 tf.summary.image('output', network.output)
 tf.summary.image('ground truth', ground_truth)
@@ -69,18 +75,33 @@ with tf.Session() as sess:
 
     print('Training model...')
 
-    while tf.train.global_step(sess, global_step) * params['batch_size'] < data_set.length * params['epochs']:
+    while tf.train.global_step(sess, global_step) * params['batch_size'] < train_set.length * params['epochs']:
         batch = tf.train.global_step(sess, global_step)
-        epoch = batch * params['batch_size'] / data_set.length
+        epoch = batch * params['batch_size'] / train_set.length
 
-        x, y = data_set.batch()
+        x, y = train_set.batch()
 
         current_learning_rate = params['learning_rate'] * params['learning_rate_decay'] ** (epoch // params['learning_rate_decay_step'])
 
         feed_dict = {input: x, ground_truth: y, learning_rate: current_learning_rate}
 
-        if batch * params['batch_size'] % data_set.length == 0:
+        if batch * params['batch_size'] % train_set.length == 0:
             print('Processing epoch #%d...' % (epoch + 1))
+
+            validation_scores = []
+
+            while True:
+                validation_batch = validation_set.fetch()
+
+                if validation_batch is None:
+                    validation_set.images_completed = 0
+
+                    break
+
+                x_val, y_val = validation_batch
+                validation_scores.append(score.eval(feed_dict={input: x_val, ground_truth: y_val}))
+
+            feed_dict[validation_score] = np.mean(validation_scores)
 
             _, summary = sess.run([train_step, summary_step], feed_dict=feed_dict)
             saver.save(sess, model_path)

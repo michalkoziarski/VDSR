@@ -11,5 +11,6 @@
   "learning_rate_decay": 0.1,
   "learning_rate_decay_step": 20,
   "gradient_clipping": 0.005,
-  "benchmark": "91"
+  "train_set": "91",
+  "validation_set": "Set5"
 }
