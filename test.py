@@ -24,7 +24,7 @@ with tf.Session() as sess:
 
     for set_name in ['Set5', 'Set14', 'B100', 'Urban100']:
         for scaling_factor in [2, 3, 4]:
-            dataset = data.load('test', set_name, scaling_factors=[scaling_factor])
+            dataset = data.load('test', set_name, scaling_factors=[scaling_factor], verbose=False)
 
             scores = []
 

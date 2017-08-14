@@ -184,7 +184,7 @@ def augment(partition, benchmark, patch_size=41):
                 misc.imsave(os.path.join(augmented_path, out_name), scaled_images[scale])
 
 
-def load(partition, benchmark, batch_size=64, patch_size=41, scaling_factors=(2, 3, 4)):
+def load(partition, benchmark, batch_size=64, patch_size=41, scaling_factors=(2, 3, 4), verbose=True):
     assert partition in ['train', 'test']
 
     if partition == 'train':
@@ -196,26 +196,32 @@ def load(partition, benchmark, batch_size=64, patch_size=41, scaling_factors=(2,
     augmented_path = os.path.join(DATA_PATH, partition, '%s_augmented' % benchmark)
 
     if not os.path.exists(benchmark_path):
-        print('Downloading data...')
+        if verbose:
+            print('Downloading data...')
 
         download()
 
-        print('Downloading complete.')
+        if verbose:
+            print('Downloading complete.')
 
     if not os.path.exists(augmented_path):
-        print('Augmenting data...')
+        if verbose:
+            print('Augmenting data...')
 
         augment(partition, benchmark, patch_size)
 
-        print('Augmenting complete.')
+        if verbose:
+            print('Augmenting complete.')
 
-    print('Loading data to the memory...')
+    if verbose:
+        print('Loading data to the memory...')
 
     if partition == 'train':
         data_set = TrainSet(benchmark, batch_size, scaling_factors=scaling_factors)
     else:
         data_set = TestSet(benchmark, scaling_factors=scaling_factors)
 
-    print('Loading complete.')
+    if verbose:
+        print('Loading complete.')
 
     return data_set
