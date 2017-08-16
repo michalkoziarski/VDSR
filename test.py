@@ -35,7 +35,7 @@ with tf.Session() as sess:
                     break
 
                 image, target = fetched
-                prediction = network.output.eval(feed_dict={input: image})
+                prediction = np.clip(network.output.eval(feed_dict={input: image}), 0.0, 1.0)
                 scores.append(utils.psnr(target, prediction).eval())
 
             print('Dataset "%s", scaling factor = %d. Mean PSNR = %.2f.' % (set_name, scaling_factor, np.mean(scores)))

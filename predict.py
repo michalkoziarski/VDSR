@@ -27,7 +27,7 @@ def predict(images):
         predictions = []
 
         for image in images:
-            predictions.append(network.output.eval(feed_dict={input: image}))
+            predictions.append(np.clip(network.output.eval(feed_dict={input: image}), 0.0, 1.0))
 
     return predictions
 
