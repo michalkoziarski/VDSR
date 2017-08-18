@@ -51,10 +51,10 @@ def predict(images):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-input', help='a path of the input image', required=True)
-    parser.add_argument('-output', help='a path of the output image', required=True)
+    parser.add_argument('-in', help='a path of the input image', required=True)
+    parser.add_argument('-out', help='a path of the output image', required=True)
     args = vars(parser.parse_args())
 
-    image = misc.imread(args['input'])
+    image = misc.imread(args['in'])
     prediction = predict([image])[0]
-    misc.imsave(args['output'], prediction)
+    misc.imsave(args['out'], prediction)
