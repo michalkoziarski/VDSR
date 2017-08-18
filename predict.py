@@ -9,7 +9,7 @@ from scipy import misc
 from skimage import color
 
 
-def predict(images):
+def load_model(session):
     checkpoint_path = os.path.join(os.path.dirname(__file__), 'model')
 
     assert os.path.exists(checkpoint_path)
@@ -19,32 +19,45 @@ def predict(images):
 
     input = tf.placeholder(tf.float32)
     network = model.Model(input, params['n_layers'], params['kernel_size'], params['n_filters'])
+    checkpoint = tf.train.get_checkpoint_state(checkpoint_path)
+    saver = tf.train.Saver()
+    saver.restore(session, checkpoint.model_checkpoint_path)
 
-    with tf.Session() as sess:
-        checkpoint = tf.train.get_checkpoint_state(checkpoint_path)
-        saver = tf.train.Saver()
-        saver.restore(sess, checkpoint.model_checkpoint_path)
+    return network
 
-        predictions = []
 
-        for image in images:
-            if len(image.shape) == 3:
-                image_ycbcr = color.rgb2ycbcr(image)
-                image_y = image_ycbcr[:, :, 0]
-            else:
-                image_y = image.copy()
+def predict(images, session=None, network=None):
+    session_passed = session is not None
 
-            image_y = image_y.astype(np.float) / 255
-            reshaped_image_y = np.array([np.expand_dims(image_y, axis=2)])
-            prediction = network.output.eval(feed_dict={input: reshaped_image_y})[0]
-            prediction = (np.clip(prediction, 0.0, 1.0) * 255).astype(np.uint)
+    if not session_passed:
+        session = tf.Session()
 
-            if len(image.shape) == 3:
-                prediction = color.ycbcr2rgb(np.concatenate((prediction, image_ycbcr[:, :, 1:3]), axis=2))
-            else:
-                prediction = prediction[:, :, 0]
+    if network is None:
+        network = load_model(session)
 
-            predictions.append(prediction)
+    predictions = []
+
+    for image in images:
+        if len(image.shape) == 3:
+            image_ycbcr = color.rgb2ycbcr(image)
+            image_y = image_ycbcr[:, :, 0]
+        else:
+            image_y = image.copy()
+
+        image_y = image_y.astype(np.float) / 255
+        reshaped_image_y = np.array([np.expand_dims(image_y, axis=2)])
+        prediction = network.output.eval(feed_dict={network.input: reshaped_image_y}, session=session)[0]
+        prediction = (np.clip(prediction, 0.0, 1.0) * 255).astype(np.uint)
+
+        if len(image.shape) == 3:
+            prediction = color.ycbcr2rgb(np.concatenate((prediction, image_ycbcr[:, :, 1:3]), axis=2))
+        else:
+            prediction = prediction[:, :, 0]
+
+        predictions.append(prediction)
+
+    if not session_passed:
+        session.close()
 
     return predictions
 
