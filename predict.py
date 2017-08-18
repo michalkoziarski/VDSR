@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 
 from scipy import misc
+from skimage import color
 
 
 def predict(images):
@@ -27,7 +28,23 @@ def predict(images):
         predictions = []
 
         for image in images:
-            predictions.append(np.clip(network.output.eval(feed_dict={input: image}), 0.0, 1.0))
+            if len(image.shape) == 3:
+                image_ycbcr = color.rgb2ycbcr(image)
+                image_y = image_ycbcr[:, :, 0]
+            else:
+                image_y = image.copy()
+
+            image_y = image_y.astype(np.float) / 255
+            reshaped_image_y = np.array([np.expand_dims(image_y, axis=2)])
+            prediction = network.output.eval(feed_dict={input: reshaped_image_y})[0]
+            prediction = (np.clip(prediction, 0.0, 1.0) * 255).astype(np.uint)
+
+            if len(image.shape) == 3:
+                prediction = color.ycbcr2rgb(np.concatenate((prediction, image_ycbcr[:, :, 1:3]), axis=2))
+            else:
+                prediction = prediction[:, :, 0]
+
+            predictions.append(prediction)
 
     return predictions
 
@@ -38,6 +55,6 @@ if __name__ == '__main__':
     parser.add_argument('-output', help='a path of the output image', required=True)
     args = vars(parser.parse_args())
 
-    image = np.expand_dims((misc.imread(args['input']).astype(np.float) / 255), axis=2)
-    prediction = predict([np.array([image])])[0][0][:, :, 0]
+    image = misc.imread(args['input'])
+    prediction = predict([image])[0]
     misc.imsave(args['output'], prediction)
