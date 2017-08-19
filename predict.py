@@ -65,10 +65,28 @@ def predict(images, session=None, network=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-in', help='a path of the input image', required=True)
-    parser.add_argument('-out', help='a path of the output image', required=True)
+    parser.add_argument('-in', help='a path of the input image or a directory of the input images', required=True)
+    parser.add_argument('-out', help='a path for the output image or a directory for the output images', required=True)
     args = vars(parser.parse_args())
 
-    image = misc.imread(args['in'])
-    prediction = predict([image])[0]
-    misc.imsave(args['out'], prediction)
+    if os.path.isfile(args['in']):
+        image = misc.imread(args['in'])
+        prediction = predict([image])[0]
+        misc.imsave(args['out'], prediction)
+    elif os.path.isdir(args['in']):
+        images = []
+        file_names = []
+
+        for file_name in os.listdir(args['in']):
+            images.append(misc.imread(os.path.join(args['in'], file_name)))
+            file_names.append(file_name)
+
+        predictions = predict(images)
+
+        if not os.path.exists(args['out']):
+            os.mkdir(args['out'])
+
+        for file_name, prediction in zip(file_names, predictions):
+            misc.imsave(os.path.join(args['out'], file_name), prediction)
+    else:
+        raise ValueError('Incorrect input path.')
