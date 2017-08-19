@@ -47,14 +47,15 @@ def predict(images, session=None, network=None):
         image_y = image_y.astype(np.float) / 255
         reshaped_image_y = np.array([np.expand_dims(image_y, axis=2)])
         prediction = network.output.eval(feed_dict={network.input: reshaped_image_y}, session=session)[0]
-        prediction = np.clip(prediction, 0.0, 1.0) * 255
+        prediction *= 255
 
         if len(image.shape) == 3:
-            prediction = color.ycbcr2rgb(np.concatenate((prediction, image_ycbcr[:, :, 1:3]), axis=2))
+            prediction = color.ycbcr2rgb(np.concatenate((prediction, image_ycbcr[:, :, 1:3]), axis=2)) * 255
         else:
             prediction = prediction[:, :, 0]
 
-        predictions.append(prediction.astype(np.uint8))
+        prediction = np.clip(prediction, 0, 255).astype(np.uint8)
+        predictions.append(prediction)
 
     if not session_passed:
         session.close()
