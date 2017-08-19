@@ -19,7 +19,7 @@ ground_truth = tf.placeholder(tf.float32)
 learning_rate = tf.placeholder(tf.float32, shape=[])
 global_step = tf.Variable(0, trainable=False, name='global_step')
 network = model.Model(input, params['n_layers'], params['kernel_size'], params['n_filters'])
-base_loss = tf.reduce_mean(tf.square(tf.subtract(ground_truth, network.output)))
+base_loss = tf.reduce_sum(tf.nn.l2_loss(tf.subtract(network.output, ground_truth)))
 weight_loss = params['weight_decay'] * tf.reduce_sum(tf.stack([tf.nn.l2_loss(weight) for weight in network.weights]))
 loss = base_loss + weight_loss
 validation_score = tf.placeholder(tf.float32)
