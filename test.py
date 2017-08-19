@@ -12,7 +12,7 @@ with tf.Session() as session:
         for scaling_factor in [2, 3, 4]:
             dataset = data.TestSet(set_name, scaling_factors=[scaling_factor])
             predictions = predict.predict(dataset.images, session, network)
-            score = np.mean([utils.psnr(target, prediction, maximum=255).eval() for target, prediction in
-                             zip(dataset.targets, predictions)])
+            score = np.mean([utils.psnr(target.astype(np.float32), prediction.astype(np.float32), maximum=255).eval()
+                             for target, prediction in zip(dataset.targets, predictions)])
 
             print('Dataset "%s", scaling factor = %d. Mean PSNR = %.2f.' % (set_name, scaling_factor, score))
