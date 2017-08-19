@@ -1,6 +1,7 @@
 import data
 import model
 import utils
+import predict
 import os
 import json
 import numpy as np
@@ -10,8 +11,8 @@ import tensorflow as tf
 with open(os.path.join(os.path.dirname(__file__), 'params.json')) as f:
     params = json.load(f)
 
-train_set = data.load('train', params['train_set'], params['batch_size'])
-validation_set = data.load('test', params['validation_set'])
+train_set = data.TrainSet(params['train_set'], params['batch_size'], params['patch_size'])
+validation_set = data.TestSet(params['validation_set'])
 
 input = tf.placeholder(tf.float32)
 ground_truth = tf.placeholder(tf.float32)
@@ -21,7 +22,6 @@ network = model.Model(input, params['n_layers'], params['kernel_size'], params['
 base_loss = tf.reduce_mean(tf.square(tf.subtract(ground_truth, network.output)))
 weight_loss = params['weight_decay'] * tf.reduce_sum(tf.stack([tf.nn.l2_loss(weight) for weight in network.weights]))
 loss = base_loss + weight_loss
-score = tf.reduce_mean(utils.psnr(ground_truth, network.output))
 validation_score = tf.placeholder(tf.float32)
 
 tf.summary.scalar('base loss', base_loss)
@@ -57,27 +57,27 @@ for path in [checkpoint_path, log_path]:
     if not os.path.exists(path):
         os.mkdir(path)
 
-with tf.Session() as sess:
+with tf.Session() as session:
     checkpoint = tf.train.get_checkpoint_state(checkpoint_path)
 
     if checkpoint and checkpoint.model_checkpoint_path:
         print('Restoring model...')
 
-        sess.run(tf.global_variables_initializer())
-        saver.restore(sess, checkpoint.model_checkpoint_path)
+        session.run(tf.global_variables_initializer())
+        saver.restore(session, checkpoint.model_checkpoint_path)
 
         print('Restoration complete.')
     else:
         print('Initializing new model...')
 
-        sess.run(tf.global_variables_initializer())
+        session.run(tf.global_variables_initializer())
 
         print('Initialization complete.')
 
     print('Training model...')
 
-    while tf.train.global_step(sess, global_step) * params['batch_size'] < train_set.length * params['epochs']:
-        batch = tf.train.global_step(sess, global_step)
+    while tf.train.global_step(session, global_step) * params['batch_size'] < train_set.length * params['epochs']:
+        batch = tf.train.global_step(session, global_step)
         epoch = batch * params['batch_size'] / train_set.length
 
         x, y = train_set.batch()
@@ -89,25 +89,15 @@ with tf.Session() as sess:
         if batch * params['batch_size'] % train_set.length == 0:
             print('Processing epoch #%d...' % (epoch + 1))
 
-            validation_scores = []
+            predictions = predict.predict(validation_set.images, session, network)
+            score = np.mean([utils.psnr(target.astype(np.float32), prediction.astype(np.float32), maximum=255).eval()
+                             for target, prediction in zip(validation_set.targets, predictions)])
+            feed_dict[validation_score] = score
 
-            while True:
-                validation_batch = validation_set.fetch()
-
-                if validation_batch is None:
-                    validation_set.images_completed = 0
-
-                    break
-
-                x_val, y_val = validation_batch
-                validation_scores.append(score.eval(feed_dict={input: x_val, ground_truth: y_val}))
-
-            feed_dict[validation_score] = np.mean(validation_scores)
-
-            _, summary = sess.run([train_step, summary_step], feed_dict=feed_dict)
-            saver.save(sess, model_path)
+            _, summary = session.run([train_step, summary_step], feed_dict=feed_dict)
+            saver.save(session, model_path)
             summary_writer.add_summary(summary, epoch)
         else:
-            sess.run([train_step], feed_dict=feed_dict)
+            session.run([train_step], feed_dict=feed_dict)
 
     print('Training complete.')
