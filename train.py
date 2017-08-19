@@ -63,6 +63,7 @@ with tf.Session() as sess:
     if checkpoint and checkpoint.model_checkpoint_path:
         print('Restoring model...')
 
+        sess.run(tf.global_variables_initializer())
         saver.restore(sess, checkpoint.model_checkpoint_path)
 
         print('Restoration complete.')
