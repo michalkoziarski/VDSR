@@ -41,21 +41,22 @@ class TrainSet:
             for scaling_factor in scaling_factors:
                 downscaled = misc.imresize(image, 1 / scaling_factor, 'bicubic', mode='L')
                 rescaled = misc.imresize(downscaled, float(scaling_factor), 'bicubic', mode='L')
+                high_res_image = image.astype(np.float32) / 255
                 low_res_image = np.clip(rescaled.astype(np.float32) / 255, 0.0, 1.0)
 
                 for horizontal_patch in range(n_horizontal_patches):
                     for vertical_patch in range(n_vertical_patches):
                         h_start = horizontal_patch * patch_size
                         v_start = vertical_patch * patch_size
-                        high_res_patch = image[h_start:h_start + patch_size, v_start:v_start + patch_size]
+                        high_res_patch = high_res_image[h_start:h_start + patch_size, v_start:v_start + patch_size]
                         low_res_patch = low_res_image[h_start:h_start + patch_size, v_start:v_start + patch_size]
 
                         for _ in range(4):
                             high_res_patch = np.rot90(high_res_patch)
                             low_res_patch = np.rot90(low_res_patch)
 
-                            self.targets.append(high_res_patch)
-                            self.images.append(low_res_patch)
+                            self.targets.append(np.expand_dims(high_res_patch, axis=2))
+                            self.images.append(np.expand_dims(low_res_patch, axis=2))
 
                         high_res_patch = np.fliplr(high_res_patch)
                         low_res_patch = np.fliplr(low_res_patch)
@@ -64,8 +65,8 @@ class TrainSet:
                             high_res_patch = np.rot90(high_res_patch)
                             low_res_patch = np.rot90(low_res_patch)
 
-                            self.targets.append(high_res_patch)
-                            self.images.append(low_res_patch)
+                            self.targets.append(np.expand_dims(high_res_patch, axis=2))
+                            self.images.append(np.expand_dims(low_res_patch, axis=2))
 
         self.images = np.array(self.images)
         self.targets = np.array(self.targets)
