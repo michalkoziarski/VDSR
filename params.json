@@ -2,15 +2,14 @@
   "n_layers": 20,
   "kernel_size": 3,
   "n_filters": 64,
-  "epochs": 80,
+  "epochs": 60,
   "weight_decay": 0.0001,
-  "momentum": 0.9,
   "batch_size": 64,
   "patch_size": 41,
   "learning_rate": 0.0001,
   "learning_rate_decay": 0.1,
-  "learning_rate_decay_step": 10,
-  "gradient_clipping": 0.05,
+  "learning_rate_decay_step": 5,
+  "gradient_clipping": 0.5,
   "train_set": "291",
   "validation_set": "Set5"
 }

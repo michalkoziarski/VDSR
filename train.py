@@ -41,7 +41,7 @@ for i in range(len(network.weights)):
 summary_step = tf.summary.merge_all()
 saver = tf.train.Saver(max_to_keep=0)
 
-optimizer = tf.train.MomentumOptimizer(learning_rate, params['momentum'])
+optimizer = tf.train.AdamOptimizer(learning_rate)
 gradients = optimizer.compute_gradients(loss)
 clip_value = params['gradient_clipping'] / learning_rate
 capped_gradients = [(tf.clip_by_value(grad, -clip_value, clip_value), var) for grad, var in gradients]
