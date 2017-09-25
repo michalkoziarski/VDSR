@@ -1,4 +1,5 @@
 import model
+import utils
 import os
 import json
 import argparse
@@ -26,7 +27,7 @@ def load_model(session):
     return network
 
 
-def predict(images, session=None, network=None):
+def predict(images, session=None, network=None, targets=None, border=0):
     session_passed = session is not None
 
     if not session_passed:
@@ -37,7 +38,12 @@ def predict(images, session=None, network=None):
 
     predictions = []
 
-    for image in images:
+    if targets is not None:
+        psnr = []
+
+    for i in range(len(images)):
+        image = images[i]
+
         if len(image.shape) == 3:
             image_ycbcr = color.rgb2ycbcr(image)
             image_y = image_ycbcr[:, :, 0]
@@ -48,6 +54,14 @@ def predict(images, session=None, network=None):
         reshaped_image_y = np.array([np.expand_dims(image_y, axis=2)])
         prediction = network.output.eval(feed_dict={network.input: reshaped_image_y}, session=session)[0]
         prediction *= 255
+
+        if targets is not None:
+            if len(targets[i].shape) == 3:
+                target_y = color.rgb2ycbcr(targets[i])[:, :, 0]
+            else:
+                target_y = targets[i].copy()
+
+            psnr.append(utils.psnr(prediction[:, :, 0], target_y, maximum=255.0))
 
         if len(image.shape) == 3:
             prediction = color.ycbcr2rgb(np.concatenate((prediction, image_ycbcr[:, :, 1:3]), axis=2)) * 255
@@ -60,7 +74,10 @@ def predict(images, session=None, network=None):
     if not session_passed:
         session.close()
 
-    return predictions
+    if targets is not None:
+        return predictions, psnr
+    else:
+        return predictions
 
 
 if __name__ == '__main__':

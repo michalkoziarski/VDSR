@@ -1,5 +1,4 @@
 import data
-import utils
 import predict
 import numpy as np
 import tensorflow as tf
@@ -11,8 +10,7 @@ with tf.Session() as session:
     for set_name in ['Set5', 'Set14', 'B100', 'Urban100']:
         for scaling_factor in [2, 3, 4]:
             dataset = data.TestSet(set_name, scaling_factors=[scaling_factor])
-            predictions = predict.predict(dataset.images, session, network)
-            score = np.mean([utils.psnr(target.astype(np.float32), prediction.astype(np.float32), maximum=255).eval()
-                             for target, prediction in zip(dataset.targets, predictions)])
+            predictions, psnr = predict.predict(dataset.images, session, network, targets=dataset.targets,
+                                                border=scaling_factor)
 
-            print('Dataset "%s", scaling factor = %d. Mean PSNR = %.2f.' % (set_name, scaling_factor, score))
+            print('Dataset "%s", scaling factor = %d. Mean PSNR = %.2f.' % (set_name, scaling_factor, np.mean(psnr)))

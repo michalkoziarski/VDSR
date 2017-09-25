@@ -89,10 +89,8 @@ with tf.Session() as session:
         if batch * params['batch_size'] % train_set.length == 0:
             print('Processing epoch #%d...' % (epoch + 1))
 
-            predictions = predict.predict(validation_set.images, session, network)
-            score = np.mean([utils.psnr(target.astype(np.float32), prediction.astype(np.float32), maximum=255).eval()
-                             for target, prediction in zip(validation_set.targets, predictions)])
-            feed_dict[validation_score] = score
+            predictions, psnr = predict.predict(validation_set.images, session, network, targets=validation_set.targets)
+            feed_dict[validation_score] = np.mean(psnr)
 
             _, summary = session.run([train_step, summary_step], feed_dict=feed_dict)
             saver.save(session, model_path)
