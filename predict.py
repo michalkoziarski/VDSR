@@ -61,7 +61,8 @@ def predict(images, session=None, network=None, targets=None, border=0):
             else:
                 target_y = targets[i].copy()
 
-            psnr.append(utils.psnr(prediction[:, :, 0], target_y, maximum=255.0))
+            psnr.append(utils.psnr(prediction[border:-border, border:-border, 0],
+                                   target_y[border:-border, border:-border], maximum=255.0))
 
         if len(image.shape) == 3:
             prediction = color.ycbcr2rgb(np.concatenate((prediction, image_ycbcr[:, :, 1:3]), axis=2)) * 255
