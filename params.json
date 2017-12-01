@@ -8,7 +8,7 @@
   "patch_size": 41,
   "learning_rate": 0.0001,
   "learning_rate_decay": 0.1,
-  "learning_rate_decay_step": 5,
+  "learning_rate_decay_step": 20,
   "gradient_clipping": 0.5,
   "train_set": "291",
   "validation_set": "Set5"
